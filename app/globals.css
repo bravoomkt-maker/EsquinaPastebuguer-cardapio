@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-montserrat);
+  --font-display: var(--font-anton);
+
+  /* Identidade visual: Esquina Pasteburguer */
+  --color-brand: #e63946;
+  --color-brand-dark: #b3222e;
+  --color-brand-light: #fce9ea;
+  --color-accent-orange: #ff7a00;
+  --color-accent-yellow: #ffc300;
+  --color-accent-green: #4caf50;
+  --color-ink: #111111;
+  --color-ink-soft: #47433f;
+  --color-paper: #ffffff;
+  --color-surface: #f7f4f2;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  }
+}
