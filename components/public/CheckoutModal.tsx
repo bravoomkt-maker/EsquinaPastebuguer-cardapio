@@ -120,11 +120,16 @@ export function CheckoutModal({
       setForm(EMPTY_FORM);
       onSuccess();
     } catch (err) {
-      setSubmitError(
+      const message =
         err instanceof Error
           ? err.message
-          : "Não foi possível enviar o pedido. Tente novamente."
-      );
+          : typeof err === "object" &&
+              err !== null &&
+              "message" in err &&
+              typeof (err as { message: unknown }).message === "string"
+            ? (err as { message: string }).message
+            : "Não foi possível enviar o pedido. Tente novamente.";
+      setSubmitError(message);
     } finally {
       setIsSubmitting(false);
     }
