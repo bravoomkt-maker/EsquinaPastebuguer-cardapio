@@ -18,6 +18,9 @@ export function CategoryForm({
 }) {
   const [name, setName] = useState(category?.name ?? "");
   const [active, setActive] = useState(category?.active ?? true);
+  const [allowHalfHalf, setAllowHalfHalf] = useState(
+    category?.allow_half_half ?? false
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -29,6 +32,7 @@ export function CategoryForm({
     const formData = new FormData();
     formData.set("name", name);
     if (active) formData.set("active", "on");
+    if (allowHalfHalf) formData.set("allow_half_half", "on");
 
     const result = category
       ? await updateCategory(category.id, undefined, formData)
@@ -66,6 +70,15 @@ export function CategoryForm({
             onChange={(event) => setActive(event.target.checked)}
           />
           Ativa (visível no cardápio)
+        </label>
+
+        <label className="flex items-center gap-2 text-sm text-ink">
+          <input
+            type="checkbox"
+            checked={allowHalfHalf}
+            onChange={(event) => setAllowHalfHalf(event.target.checked)}
+          />
+          Permitir meio a meio (ex: pizzas)
         </label>
 
         {error && (

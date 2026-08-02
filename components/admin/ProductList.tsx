@@ -10,14 +10,16 @@ import {
   toggleProductField,
 } from "@/app/admin/(dashboard)/produtos/actions";
 import { formatCurrency } from "@/lib/utils/currency";
-import type { Category, Product } from "@/lib/types";
+import type { Category, Product, ProductSize } from "@/lib/types";
 
 export function ProductList({
   products,
   categories,
+  sizesByProduct,
 }: {
   products: Product[];
   categories: Category[];
+  sizesByProduct: Record<string, ProductSize[]>;
 }) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -120,7 +122,18 @@ export function ProductList({
                     {categoryName(product.category_id)}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                    {product.promo_price ? (
+                    {(sizesByProduct[product.id]?.length ?? 0) > 0 ? (
+                      <span className="text-sm font-bold text-ink">
+                        A partir de{" "}
+                        {formatCurrency(
+                          Math.min(
+                            ...sizesByProduct[product.id].map(
+                              (s) => s.promo_price ?? s.price
+                            )
+                          )
+                        )}
+                      </span>
+                    ) : product.promo_price ? (
                       <>
                         <span className="text-xs text-ink-soft line-through">
                           {formatCurrency(product.price)}
@@ -186,6 +199,7 @@ export function ProductList({
         onClose={() => setFormOpen(false)}
         categories={categories}
         product={editingProduct ?? undefined}
+        sizes={editingProduct ? sizesByProduct[editingProduct.id] : undefined}
       />
     </div>
   );

@@ -95,6 +95,8 @@ export function CheckoutModal({
           product_id: item.productId,
           quantity: item.quantity,
           notes: item.notes || null,
+          size_label: item.sizeLabel,
+          second_product_id: item.secondProductId,
         })),
       });
 

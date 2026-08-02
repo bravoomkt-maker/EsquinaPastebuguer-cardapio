@@ -28,7 +28,7 @@ export function CartDrawer({
         <>
           <div className="max-h-96 overflow-y-auto">
             {items.map((item) => (
-              <CartItemRow key={item.productId} item={item} />
+              <CartItemRow key={item.lineId} item={item} />
             ))}
           </div>
 

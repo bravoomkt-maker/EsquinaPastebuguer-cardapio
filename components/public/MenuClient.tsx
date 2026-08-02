@@ -7,17 +7,20 @@ import { CategoryNav } from "@/components/public/CategoryNav";
 import { CheckoutModal } from "@/components/public/CheckoutModal";
 import { ProductGrid } from "@/components/public/ProductGrid";
 import { SearchBar } from "@/components/public/SearchBar";
+import { SizeHalfModal } from "@/components/public/SizeHalfModal";
 import { useCartStore } from "@/lib/store/cartStore";
-import type { Category, Neighborhood, Product } from "@/lib/types";
+import type { Category, Neighborhood, Product, ProductSize } from "@/lib/types";
 
 export function MenuClient({
   categories,
   products,
+  sizesByProduct,
   neighborhoods,
   whatsappNumber,
 }: {
   categories: Category[];
   products: Product[];
+  sizesByProduct: Record<string, ProductSize[]>;
   neighborhoods: Neighborhood[];
   whatsappNumber: string;
 }) {
@@ -27,6 +30,9 @@ export function MenuClient({
   );
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [sizeModalProduct, setSizeModalProduct] = useState<Product | null>(
+    null
+  );
   const addItem = useCartStore((state) => state.addItem);
 
   const filteredProducts = useMemo(() => {
@@ -45,6 +51,29 @@ export function MenuClient({
     });
   }, [products, search, selectedCategoryId]);
 
+  function handleAdd(product: Product) {
+    const sizes = sizesByProduct[product.id] ?? [];
+
+    if (sizes.length > 0) {
+      setSizeModalProduct(product);
+      return;
+    }
+
+    addItem({
+      productId: product.id,
+      name: product.name,
+      unitPrice: product.promo_price ?? product.price,
+      imageUrl: product.image_url,
+    });
+  }
+
+  const sizeModalCategory = sizeModalProduct
+    ? categories.find((c) => c.id === sizeModalProduct.category_id)
+    : undefined;
+  const sizeModalSiblings = sizeModalProduct
+    ? products.filter((p) => p.category_id === sizeModalProduct.category_id)
+    : [];
+
   return (
     <div className="flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-4">
@@ -57,7 +86,8 @@ export function MenuClient({
         <ProductGrid
           categories={categories}
           products={filteredProducts}
-          onAdd={(product) => addItem(product)}
+          sizesByProduct={sizesByProduct}
+          onAdd={handleAdd}
         />
       </div>
 
@@ -81,6 +111,19 @@ export function MenuClient({
         whatsappNumber={whatsappNumber}
         onSuccess={() => setCheckoutOpen(false)}
       />
+
+      {sizeModalProduct && (
+        <SizeHalfModal
+          key={sizeModalProduct.id}
+          open={!!sizeModalProduct}
+          onClose={() => setSizeModalProduct(null)}
+          product={sizeModalProduct}
+          category={sizeModalCategory}
+          sizes={sizesByProduct[sizeModalProduct.id] ?? []}
+          siblingProducts={sizeModalSiblings}
+          sizesByProduct={sizesByProduct}
+        />
+      )}
     </div>
   );
 }

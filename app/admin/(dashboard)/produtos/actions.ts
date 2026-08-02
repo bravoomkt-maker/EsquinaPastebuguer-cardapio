@@ -77,12 +77,90 @@ function parseFields(formData: FormData): ProductFields | { error: string } {
   };
 }
 
+interface SizeInput {
+  label: string;
+  price: number;
+  promo_price: number | null;
+}
+
+function parseSizes(formData: FormData): SizeInput[] | { error: string } {
+  const raw = String(formData.get("sizes") ?? "[]");
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { error: "Tamanhos inválidos" };
+  }
+
+  if (!Array.isArray(parsed)) return { error: "Tamanhos inválidos" };
+
+  const sizes: SizeInput[] = [];
+  const seenLabels = new Set<string>();
+
+  for (const row of parsed) {
+    const label = String(row?.label ?? "").trim();
+    const price = Number(row?.price);
+    const promoRaw = String(row?.promoPrice ?? "").trim();
+    const promoPrice = promoRaw ? Number(promoRaw) : null;
+
+    if (!label) continue;
+
+    if (seenLabels.has(label.toLowerCase())) {
+      return { error: `Tamanho "${label}" duplicado` };
+    }
+    seenLabels.add(label.toLowerCase());
+
+    if (!price || Number.isNaN(price) || price <= 0) {
+      return { error: `Informe um preço válido para o tamanho "${label}"` };
+    }
+    if (promoPrice !== null && (Number.isNaN(promoPrice) || promoPrice >= price)) {
+      return {
+        error: `Preço promocional do tamanho "${label}" deve ser menor que o preço normal`,
+      };
+    }
+
+    sizes.push({ label, price, promo_price: promoPrice });
+  }
+
+  return sizes;
+}
+
+async function syncProductSizes(
+  supabase: SupabaseClient<Database>,
+  productId: string,
+  sizes: SizeInput[]
+): Promise<string | null> {
+  const { error: deleteError } = await supabase
+    .from("product_sizes")
+    .delete()
+    .eq("product_id", productId);
+
+  if (deleteError) return deleteError.message;
+  if (sizes.length === 0) return null;
+
+  const { error: insertError } = await supabase.from("product_sizes").insert(
+    sizes.map((size, index) => ({
+      product_id: productId,
+      label: size.label,
+      price: size.price,
+      promo_price: size.promo_price,
+      position: index,
+    }))
+  );
+
+  return insertError?.message ?? null;
+}
+
 export async function createProduct(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
   const fields = parseFields(formData);
   if ("error" in fields) return fields;
+
+  const sizes = parseSizes(formData);
+  if ("error" in sizes) return sizes;
 
   const supabase = await createClient();
   const imageFile = formData.get("image") as File | null;
@@ -104,13 +182,20 @@ export async function createProduct(
     .limit(1)
     .maybeSingle();
 
-  const { error } = await supabase.from("products").insert({
-    ...fields,
-    image_url: imageUrl,
-    position: (last?.position ?? 0) + 1,
-  });
+  const { data: created, error } = await supabase
+    .from("products")
+    .insert({
+      ...fields,
+      image_url: imageUrl,
+      position: (last?.position ?? 0) + 1,
+    })
+    .select("id")
+    .single();
 
   if (error) return { error: error.message };
+
+  const sizesError = await syncProductSizes(supabase, created.id, sizes);
+  if (sizesError) return { error: sizesError };
 
   revalidatePath("/admin/produtos");
   revalidatePath("/");
@@ -124,6 +209,9 @@ export async function updateProduct(
 ): Promise<ActionResult> {
   const fields = parseFields(formData);
   if ("error" in fields) return fields;
+
+  const sizes = parseSizes(formData);
+  if ("error" in sizes) return sizes;
 
   const supabase = await createClient();
   const imageFile = formData.get("image") as File | null;
@@ -144,6 +232,9 @@ export async function updateProduct(
     .eq("id", id);
 
   if (error) return { error: error.message };
+
+  const sizesError = await syncProductSizes(supabase, id, sizes);
+  if (sizesError) return { error: sizesError };
 
   revalidatePath("/admin/produtos");
   revalidatePath("/");

@@ -1,13 +1,33 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { CartItem, Product } from "@/lib/types";
+import type { CartItem } from "@/lib/types";
+
+export interface AddCartItemInput {
+  productId: string;
+  name: string;
+  unitPrice: number;
+  quantity?: number;
+  imageUrl: string | null;
+  sizeLabel?: string | null;
+  secondProductId?: string | null;
+}
+
+function buildLineId(input: {
+  productId: string;
+  sizeLabel?: string | null;
+  secondProductId?: string | null;
+}): string {
+  return [input.productId, input.sizeLabel ?? "", input.secondProductId ?? ""].join(
+    ":"
+  );
+}
 
 interface CartState {
   items: CartItem[];
-  addItem: (product: Product, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  setQuantity: (productId: string, quantity: number) => void;
-  setNotes: (productId: string, notes: string) => void;
+  addItem: (input: AddCartItemInput) => void;
+  removeItem: (lineId: string) => void;
+  setQuantity: (lineId: string, quantity: number) => void;
+  setNotes: (lineId: string, notes: string) => void;
   clear: () => void;
 }
 
@@ -16,16 +36,16 @@ export const useCartStore = create<CartState>()(
     (set) => ({
       items: [],
 
-      addItem: (product, quantity = 1) =>
+      addItem: (input) =>
         set((state) => {
-          const existing = state.items.find(
-            (item) => item.productId === product.id
-          );
+          const quantity = input.quantity ?? 1;
+          const lineId = buildLineId(input);
+          const existing = state.items.find((item) => item.lineId === lineId);
 
           if (existing) {
             return {
               items: state.items.map((item) =>
-                item.productId === product.id
+                item.lineId === lineId
                   ? { ...item, quantity: item.quantity + quantity }
                   : item
               ),
@@ -36,36 +56,39 @@ export const useCartStore = create<CartState>()(
             items: [
               ...state.items,
               {
-                productId: product.id,
-                name: product.name,
-                unitPrice: product.promo_price ?? product.price,
+                lineId,
+                productId: input.productId,
+                name: input.name,
+                unitPrice: input.unitPrice,
                 quantity,
                 notes: "",
-                imageUrl: product.image_url,
+                imageUrl: input.imageUrl,
+                sizeLabel: input.sizeLabel ?? null,
+                secondProductId: input.secondProductId ?? null,
               },
             ],
           };
         }),
 
-      removeItem: (productId) =>
+      removeItem: (lineId) =>
         set((state) => ({
-          items: state.items.filter((item) => item.productId !== productId),
+          items: state.items.filter((item) => item.lineId !== lineId),
         })),
 
-      setQuantity: (productId, quantity) =>
+      setQuantity: (lineId, quantity) =>
         set((state) => ({
           items:
             quantity <= 0
-              ? state.items.filter((item) => item.productId !== productId)
+              ? state.items.filter((item) => item.lineId !== lineId)
               : state.items.map((item) =>
-                  item.productId === productId ? { ...item, quantity } : item
+                  item.lineId === lineId ? { ...item, quantity } : item
                 ),
         })),
 
-      setNotes: (productId, notes) =>
+      setNotes: (lineId, notes) =>
         set((state) => ({
           items: state.items.map((item) =>
-            item.productId === productId ? { ...item, notes } : item
+            item.lineId === lineId ? { ...item, notes } : item
           ),
         })),
 

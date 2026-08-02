@@ -2,16 +2,22 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils/currency";
-import type { Product } from "@/lib/types";
+import type { Product, ProductSize } from "@/lib/types";
 
 export function ProductCard({
   product,
+  sizes,
   onAdd,
 }: {
   product: Product;
+  sizes: ProductSize[];
   onAdd?: (product: Product) => void;
 }) {
-  const hasPromo = product.promo_price !== null;
+  const hasSizes = sizes.length > 0;
+  const hasPromo = !hasSizes && product.promo_price !== null;
+  const lowestSizePrice = hasSizes
+    ? Math.min(...sizes.map((s) => s.promo_price ?? s.price))
+    : null;
 
   return (
     <div className="flex gap-3 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-ink/5">
@@ -52,6 +58,10 @@ export function ProductCard({
           <div className="flex flex-col">
             {!product.available ? (
               <Badge tone="muted">Indisponível</Badge>
+            ) : hasSizes ? (
+              <span className="text-sm font-bold text-ink">
+                A partir de {formatCurrency(lowestSizePrice!)}
+              </span>
             ) : hasPromo ? (
               <>
                 <span className="text-xs text-ink-soft line-through">
@@ -74,7 +84,7 @@ export function ProductCard({
             disabled={!product.available}
             onClick={() => onAdd?.(product)}
           >
-            Adicionar
+            {hasSizes ? "Escolher" : "Adicionar"}
           </Button>
         </div>
       </div>

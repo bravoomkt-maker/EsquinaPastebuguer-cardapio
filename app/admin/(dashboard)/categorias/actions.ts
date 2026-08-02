@@ -17,6 +17,7 @@ export async function createCategory(
   formData: FormData
 ): Promise<ActionResult> {
   const name = String(formData.get("name") ?? "").trim();
+  const allowHalfHalf = formData.get("allow_half_half") === "on";
   if (!name) return { error: "Nome é obrigatório" };
 
   const supabase = await createClient();
@@ -28,9 +29,11 @@ export async function createCategory(
     .limit(1)
     .maybeSingle();
 
-  const { error } = await supabase
-    .from("categories")
-    .insert({ name, position: (last?.position ?? 0) + 1 });
+  const { error } = await supabase.from("categories").insert({
+    name,
+    position: (last?.position ?? 0) + 1,
+    allow_half_half: allowHalfHalf,
+  });
 
   if (error) return { error: friendlyError(error) };
 
@@ -45,12 +48,13 @@ export async function updateCategory(
 ): Promise<ActionResult> {
   const name = String(formData.get("name") ?? "").trim();
   const active = formData.get("active") === "on";
+  const allowHalfHalf = formData.get("allow_half_half") === "on";
   if (!name) return { error: "Nome é obrigatório" };
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("categories")
-    .update({ name, active })
+    .update({ name, active, allow_half_half: allowHalfHalf })
     .eq("id", id);
 
   if (error) return { error: friendlyError(error) };

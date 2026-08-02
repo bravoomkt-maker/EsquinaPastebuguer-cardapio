@@ -2,7 +2,13 @@ import { Header } from "@/components/public/Header";
 import { MenuClient } from "@/components/public/MenuClient";
 import { PromoBanner } from "@/components/public/PromoBanner";
 import { createClient } from "@/lib/supabase/server";
-import type { Category, Neighborhood, Product, StoreSettings } from "@/lib/types";
+import type {
+  Category,
+  Neighborhood,
+  Product,
+  ProductSize,
+  StoreSettings,
+} from "@/lib/types";
 
 const FALLBACK_SETTINGS: StoreSettings = {
   id: 1,
@@ -43,29 +49,39 @@ export default async function Home() {
 
   const supabase = await createClient();
 
-  const [settingsResult, categoriesResult, productsResult, neighborhoodsResult] =
-    await Promise.all([
-      supabase.from("store_settings").select("*").eq("id", 1).maybeSingle(),
-      supabase
-        .from("categories")
-        .select("*")
-        .eq("active", true)
-        .order("position", { ascending: true }),
-      supabase
-        .from("products")
-        .select("*")
-        .order("position", { ascending: true }),
-      supabase
-        .from("neighborhoods")
-        .select("*")
-        .eq("active", true)
-        .order("position", { ascending: true }),
-    ]);
+  const [
+    settingsResult,
+    categoriesResult,
+    productsResult,
+    neighborhoodsResult,
+    productSizesResult,
+  ] = await Promise.all([
+    supabase.from("store_settings").select("*").eq("id", 1).maybeSingle(),
+    supabase
+      .from("categories")
+      .select("*")
+      .eq("active", true)
+      .order("position", { ascending: true }),
+    supabase
+      .from("products")
+      .select("*")
+      .order("position", { ascending: true }),
+    supabase
+      .from("neighborhoods")
+      .select("*")
+      .eq("active", true)
+      .order("position", { ascending: true }),
+    supabase
+      .from("product_sizes")
+      .select("*")
+      .order("position", { ascending: true }),
+  ]);
 
   if (
     categoriesResult.error ||
     productsResult.error ||
-    neighborhoodsResult.error
+    neighborhoodsResult.error ||
+    productSizesResult.error
   ) {
     return (
       <main className="flex flex-1 items-center justify-center p-8">
@@ -81,6 +97,12 @@ export default async function Home() {
   const categories: Category[] = categoriesResult.data ?? [];
   const products: Product[] = productsResult.data ?? [];
   const neighborhoods: Neighborhood[] = neighborhoodsResult.data ?? [];
+  const productSizes: ProductSize[] = productSizesResult.data ?? [];
+
+  const sizesByProduct: Record<string, ProductSize[]> = {};
+  for (const size of productSizes) {
+    (sizesByProduct[size.product_id] ??= []).push(size);
+  }
 
   return (
     <main className="flex flex-1 flex-col">
@@ -89,6 +111,7 @@ export default async function Home() {
       <MenuClient
         categories={categories}
         products={products}
+        sizesByProduct={sizesByProduct}
         neighborhoods={neighborhoods}
         whatsappNumber={settings.whatsapp_number}
       />

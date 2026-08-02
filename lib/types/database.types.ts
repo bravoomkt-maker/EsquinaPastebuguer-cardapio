@@ -36,6 +36,7 @@ export interface Database {
           name: string
           position: number
           active: boolean
+          allow_half_half: boolean
           created_at: string
         }
         Insert: {
@@ -43,6 +44,7 @@ export interface Database {
           name: string
           position?: number
           active?: boolean
+          allow_half_half?: boolean
           created_at?: string
         }
         Update: {
@@ -50,6 +52,7 @@ export interface Database {
           name?: string
           position?: number
           active?: boolean
+          allow_half_half?: boolean
           created_at?: string
         }
         Relationships: []
@@ -96,6 +99,36 @@ export interface Database {
           position?: number
           created_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      product_sizes: {
+        Row: {
+          id: string
+          product_id: string
+          label: string
+          price: number
+          promo_price: number | null
+          position: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          label: string
+          price: number
+          promo_price?: number | null
+          position?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          label?: string
+          price?: number
+          promo_price?: number | null
+          position?: number
+          created_at?: string
         }
         Relationships: []
       }

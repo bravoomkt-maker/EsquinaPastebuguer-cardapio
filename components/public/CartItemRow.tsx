@@ -24,7 +24,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
         </div>
         <button
           type="button"
-          onClick={() => removeItem(item.productId)}
+          onClick={() => removeItem(item.lineId)}
           className="text-xs font-semibold text-brand"
           aria-label={`Remover ${item.name}`}
         >
@@ -39,7 +39,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
             variant="outline"
             size="sm"
             className="h-8 w-8 rounded-full p-0"
-            onClick={() => setQuantity(item.productId, item.quantity - 1)}
+            onClick={() => setQuantity(item.lineId, item.quantity - 1)}
             aria-label="Diminuir quantidade"
           >
             −
@@ -52,7 +52,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
             variant="outline"
             size="sm"
             className="h-8 w-8 rounded-full p-0"
-            onClick={() => setQuantity(item.productId, item.quantity + 1)}
+            onClick={() => setQuantity(item.lineId, item.quantity + 1)}
             aria-label="Aumentar quantidade"
           >
             +
@@ -66,7 +66,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
       <Textarea
         placeholder="Observação (ex: sem cebola)"
         value={item.notes}
-        onChange={(event) => setNotes(item.productId, event.target.value)}
+        onChange={(event) => setNotes(item.lineId, event.target.value)}
         className="min-h-16 text-xs"
       />
     </div>

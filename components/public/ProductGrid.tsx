@@ -1,13 +1,15 @@
 import { ProductCard } from "@/components/public/ProductCard";
-import type { Category, Product } from "@/lib/types";
+import type { Category, Product, ProductSize } from "@/lib/types";
 
 export function ProductGrid({
   categories,
   products,
+  sizesByProduct,
   onAdd,
 }: {
   categories: Category[];
   products: Product[];
+  sizesByProduct: Record<string, ProductSize[]>;
   onAdd?: (product: Product) => void;
 }) {
   if (products.length === 0) {
@@ -34,7 +36,12 @@ export function ProductGrid({
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {items.map((product) => (
-              <ProductCard key={product.id} product={product} onAdd={onAdd} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                sizes={sizesByProduct[product.id] ?? []}
+                onAdd={onAdd}
+              />
             ))}
           </div>
         </section>

@@ -10,18 +10,26 @@ import {
   createProduct,
   updateProduct,
 } from "@/app/admin/(dashboard)/produtos/actions";
-import type { Category, Product } from "@/lib/types";
+import type { Category, Product, ProductSize } from "@/lib/types";
+
+interface SizeRow {
+  label: string;
+  price: string;
+  promoPrice: string;
+}
 
 export function ProductForm({
   open,
   onClose,
   categories,
   product,
+  sizes,
 }: {
   open: boolean;
   onClose: () => void;
   categories: Category[];
   product?: Product;
+  sizes?: ProductSize[];
 }) {
   const [name, setName] = useState(product?.name ?? "");
   const [categoryId, setCategoryId] = useState(
@@ -35,8 +43,32 @@ export function ProductForm({
   const [available, setAvailable] = useState(product?.available ?? true);
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [sizeRows, setSizeRows] = useState<SizeRow[]>(
+    (sizes ?? [])
+      .slice()
+      .sort((a, b) => a.position - b.position)
+      .map((s) => ({
+        label: s.label,
+        price: String(s.price),
+        promoPrice: s.promo_price ? String(s.promo_price) : "",
+      }))
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function addSizeRow() {
+    setSizeRows((rows) => [...rows, { label: "", price: "", promoPrice: "" }]);
+  }
+
+  function updateSizeRow(index: number, patch: Partial<SizeRow>) {
+    setSizeRows((rows) =>
+      rows.map((row, i) => (i === index ? { ...row, ...patch } : row))
+    );
+  }
+
+  function removeSizeRow(index: number) {
+    setSizeRows((rows) => rows.filter((_, i) => i !== index));
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -52,6 +84,18 @@ export function ProductForm({
     if (available) formData.set("available", "on");
     if (featured) formData.set("featured", "on");
     if (imageFile) formData.set("image", imageFile);
+    formData.set(
+      "sizes",
+      JSON.stringify(
+        sizeRows
+          .filter((row) => row.label.trim())
+          .map((row) => ({
+            label: row.label.trim(),
+            price: row.price,
+            promoPrice: row.promoPrice,
+          }))
+      )
+    );
 
     const result = product
       ? await updateProduct(product.id, product.image_url, undefined, formData)
@@ -121,6 +165,72 @@ export function ProductForm({
             value={promoPrice}
             onChange={(e) => setPromoPrice(e.target.value)}
           />
+        </div>
+
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="text-sm font-medium text-ink">
+              Tamanhos (opcional)
+            </label>
+            <button
+              type="button"
+              onClick={addSizeRow}
+              className="text-xs font-semibold text-brand"
+            >
+              + Adicionar tamanho
+            </button>
+          </div>
+          <p className="mb-2 text-xs text-ink-soft">
+            Se cadastrar tamanhos (ex: P, M, G), o preço acima deixa de ser
+            usado no cardápio — o cliente escolhe o tamanho e paga o valor
+            correspondente.
+          </p>
+
+          {sizeRows.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {sizeRows.map((row, index) => (
+                <div key={index} className="grid grid-cols-8 gap-2">
+                  <input
+                    placeholder="Ex: G"
+                    value={row.label}
+                    onChange={(e) =>
+                      updateSizeRow(index, { label: e.target.value })
+                    }
+                    className="col-span-2 h-10 rounded-lg border border-ink/15 px-2 text-sm"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Preço"
+                    value={row.price}
+                    onChange={(e) =>
+                      updateSizeRow(index, { price: e.target.value })
+                    }
+                    className="col-span-3 h-10 rounded-lg border border-ink/15 px-2 text-sm"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Promo (opcional)"
+                    value={row.promoPrice}
+                    onChange={(e) =>
+                      updateSizeRow(index, { promoPrice: e.target.value })
+                    }
+                    className="col-span-2 h-10 rounded-lg border border-ink/15 px-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeSizeRow(index)}
+                    className="col-span-1 text-xs font-semibold text-brand"
+                  >
+                    Remover
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
