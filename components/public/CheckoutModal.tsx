@@ -75,6 +75,12 @@ export function CheckoutModal({
 
     setIsSubmitting(true);
 
+    // Abre a aba em branco de forma síncrona (dentro do clique do usuário),
+    // antes de qualquer "await" — navegadores bloqueiam window.open() quando
+    // ele acontece depois de uma espera assíncrona, tratando como pop-up
+    // indesejado. Preenchemos o endereço dela só depois que o pedido salvar.
+    const whatsappTab = window.open("", "_blank", "noopener,noreferrer");
+
     try {
       const supabase = createClient();
       const { data, error } = await supabase.rpc("create_order", {
@@ -114,12 +120,18 @@ export function CheckoutModal({
         total: result?.total ?? total,
       });
 
-      window.open(buildWhatsAppUrl(whatsappNumber, message), "_blank", "noopener,noreferrer");
+      const whatsappUrl = buildWhatsAppUrl(whatsappNumber, message);
+      if (whatsappTab) {
+        whatsappTab.location.href = whatsappUrl;
+      } else {
+        window.location.href = whatsappUrl;
+      }
 
       clearCart();
       setForm(EMPTY_FORM);
       onSuccess();
     } catch (err) {
+      whatsappTab?.close();
       const message =
         err instanceof Error
           ? err.message
