@@ -35,7 +35,7 @@ export function SizeHalfModal({
   const [sizeLabel, setSizeLabel] = useState(orderedSizes[0]?.label ?? "");
   const [mode, setMode] = useState<"whole" | "half">("whole");
   const [secondProductId, setSecondProductId] = useState<string>("");
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(product.min_quantity);
 
   const allowHalfHalf = category?.allow_half_half ?? false;
 
@@ -86,6 +86,7 @@ export function SizeHalfModal({
       imageUrl: product.image_url,
       sizeLabel,
       secondProductId: isHalf ? secondProduct!.id : null,
+      minQuantity: product.min_quantity,
     });
 
     onClose();
@@ -148,6 +149,12 @@ export function SizeHalfModal({
           </Select>
         )}
 
+        {product.min_quantity > 1 && (
+          <p className="text-xs font-medium text-brand">
+            Pedido mínimo: {product.min_quantity} unidades
+          </p>
+        )}
+
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-ink">Quantidade</span>
           <div className="flex items-center gap-2">
@@ -156,7 +163,10 @@ export function SizeHalfModal({
               variant="outline"
               size="sm"
               className="h-8 w-8 rounded-full p-0"
-              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              disabled={quantity <= product.min_quantity}
+              onClick={() =>
+                setQuantity((q) => Math.max(product.min_quantity, q - 1))
+              }
               aria-label="Diminuir quantidade"
             >
               −

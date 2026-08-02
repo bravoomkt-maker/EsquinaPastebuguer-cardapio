@@ -42,6 +42,9 @@ export function ProductForm({
   );
   const [available, setAvailable] = useState(product?.available ?? true);
   const [featured, setFeatured] = useState(product?.featured ?? false);
+  const [minQuantity, setMinQuantity] = useState(
+    String(product?.min_quantity ?? 1)
+  );
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [sizeRows, setSizeRows] = useState<SizeRow[]>(
     (sizes ?? [])
@@ -81,6 +84,7 @@ export function ProductForm({
     formData.set("description", description);
     formData.set("price", price);
     formData.set("promo_price", promoPrice);
+    formData.set("min_quantity", minQuantity);
     if (available) formData.set("available", "on");
     if (featured) formData.set("featured", "on");
     if (imageFile) formData.set("image", imageFile);
@@ -166,6 +170,16 @@ export function ProductForm({
             onChange={(e) => setPromoPrice(e.target.value)}
           />
         </div>
+
+        <Input
+          label="Quantidade mínima por pedido"
+          type="number"
+          step="1"
+          min="1"
+          value={minQuantity}
+          onChange={(e) => setMinQuantity(e.target.value)}
+          required
+        />
 
         <div>
           <div className="mb-1.5 flex items-center justify-between">

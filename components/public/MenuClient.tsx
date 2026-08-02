@@ -64,6 +64,7 @@ export function MenuClient({
       name: product.name,
       unitPrice: product.promo_price ?? product.price,
       imageUrl: product.image_url,
+      minQuantity: product.min_quantity,
     });
   }
 

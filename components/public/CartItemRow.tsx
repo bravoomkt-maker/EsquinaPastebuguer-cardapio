@@ -20,6 +20,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
           </p>
           <p className="text-xs text-ink-soft">
             {formatCurrency(item.unitPrice)} cada
+            {item.minQuantity > 1 ? ` · mínimo ${item.minQuantity} un.` : ""}
           </p>
         </div>
         <button
@@ -39,6 +40,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
             variant="outline"
             size="sm"
             className="h-8 w-8 rounded-full p-0"
+            disabled={item.quantity <= item.minQuantity}
             onClick={() => setQuantity(item.lineId, item.quantity - 1)}
             aria-label="Diminuir quantidade"
           >

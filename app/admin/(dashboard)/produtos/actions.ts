@@ -45,6 +45,7 @@ interface ProductFields {
   promo_price: number | null;
   available: boolean;
   featured: boolean;
+  min_quantity: number;
 }
 
 function parseFields(formData: FormData): ProductFields | { error: string } {
@@ -56,6 +57,8 @@ function parseFields(formData: FormData): ProductFields | { error: string } {
   const promoPrice = promoRaw ? Number(promoRaw) : null;
   const available = formData.get("available") === "on";
   const featured = formData.get("featured") === "on";
+  const minQuantityRaw = String(formData.get("min_quantity") ?? "").trim();
+  const minQuantity = minQuantityRaw ? Number(minQuantityRaw) : 1;
 
   if (!name) return { error: "Nome é obrigatório" };
   if (!categoryId) return { error: "Selecione uma categoria" };
@@ -64,6 +67,9 @@ function parseFields(formData: FormData): ProductFields | { error: string } {
   }
   if (promoPrice !== null && (Number.isNaN(promoPrice) || promoPrice >= price)) {
     return { error: "O preço promocional deve ser menor que o preço normal" };
+  }
+  if (!Number.isInteger(minQuantity) || minQuantity < 1) {
+    return { error: "Quantidade mínima deve ser um número inteiro maior ou igual a 1" };
   }
 
   return {
@@ -74,6 +80,7 @@ function parseFields(formData: FormData): ProductFields | { error: string } {
     promo_price: promoPrice,
     available,
     featured,
+    min_quantity: minQuantity,
   };
 }
 

@@ -69,6 +69,7 @@ export interface Database {
           available: boolean
           featured: boolean
           position: number
+          min_quantity: number
           created_at: string
           updated_at: string
         }
@@ -83,6 +84,7 @@ export interface Database {
           available?: boolean
           featured?: boolean
           position?: number
+          min_quantity?: number
           created_at?: string
           updated_at?: string
         }
@@ -97,6 +99,7 @@ export interface Database {
           available?: boolean
           featured?: boolean
           position?: number
+          min_quantity?: number
           created_at?: string
           updated_at?: string
         }

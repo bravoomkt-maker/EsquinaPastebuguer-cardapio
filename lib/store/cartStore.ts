@@ -10,6 +10,7 @@ export interface AddCartItemInput {
   imageUrl: string | null;
   sizeLabel?: string | null;
   secondProductId?: string | null;
+  minQuantity?: number;
 }
 
 function buildLineId(input: {
@@ -38,7 +39,8 @@ export const useCartStore = create<CartState>()(
 
       addItem: (input) =>
         set((state) => {
-          const quantity = input.quantity ?? 1;
+          const minQuantity = input.minQuantity ?? 1;
+          const quantity = input.quantity ?? minQuantity;
           const lineId = buildLineId(input);
           const existing = state.items.find((item) => item.lineId === lineId);
 
@@ -65,6 +67,7 @@ export const useCartStore = create<CartState>()(
                 imageUrl: input.imageUrl,
                 sizeLabel: input.sizeLabel ?? null,
                 secondProductId: input.secondProductId ?? null,
+                minQuantity,
               },
             ],
           };
@@ -81,7 +84,9 @@ export const useCartStore = create<CartState>()(
             quantity <= 0
               ? state.items.filter((item) => item.lineId !== lineId)
               : state.items.map((item) =>
-                  item.lineId === lineId ? { ...item, quantity } : item
+                  item.lineId === lineId
+                    ? { ...item, quantity: Math.max(quantity, item.minQuantity) }
+                    : item
                 ),
         })),
 

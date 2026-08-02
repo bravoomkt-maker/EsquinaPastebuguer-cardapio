@@ -52,6 +52,11 @@ export function ProductCard({
               {product.description}
             </p>
           )}
+          {product.min_quantity > 1 && (
+            <p className="mt-0.5 text-xs font-medium text-brand">
+              Pedido mínimo: {product.min_quantity} unidades
+            </p>
+          )}
         </div>
 
         <div className="mt-2 flex items-end justify-between gap-2">
