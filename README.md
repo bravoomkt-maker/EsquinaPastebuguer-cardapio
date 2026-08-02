@@ -23,13 +23,14 @@ components/
   admin/                      # Formulários e listas do painel admin
   ui/                         # Button, Input, Select, Modal, Badge, Spinner...
 lib/
-  supabase/                   # Clientes Supabase (browser, server, proxy)
+  supabase/                   # Clientes Supabase (browser, server)
   store/                      # Zustand (carrinho)
   types/                      # Tipos TypeScript (incl. tipos do banco)
   utils/                      # currency, whatsapp, validation, date, cn
-proxy.ts                      # Proteção de rotas /admin (equivalente ao middleware no Next 16)
 supabase/migrations/          # Migrations SQL, na ordem de aplicação
 ```
+
+Rotas em `/admin` são protegidas diretamente no Server Component do layout (`app/admin/(dashboard)/layout.tsx`), que verifica a sessão do Supabase Auth e redireciona para `/admin/login` se não houver usuário logado — sem depender de Proxy/Middleware.
 
 ## 1. Criar o projeto no Supabase
 

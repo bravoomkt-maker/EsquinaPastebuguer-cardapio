@@ -19,8 +19,10 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // setAll is called from a Server Component; ignored because
-            // session refresh is handled in proxy.ts.
+            // setAll is called from a Server Component, which can't set
+            // cookies during render. Safe to ignore: the session is still
+            // read correctly, and Server Actions/Route Handlers persist
+            // refreshed cookies normally.
           }
         },
       },
