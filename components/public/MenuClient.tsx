@@ -65,6 +65,8 @@ export function MenuClient({
       unitPrice: product.promo_price ?? product.price,
       imageUrl: product.image_url,
       minQuantity: product.min_quantity,
+      categoryName:
+        categories.find((c) => c.id === product.category_id)?.name ?? "",
     });
   }
 

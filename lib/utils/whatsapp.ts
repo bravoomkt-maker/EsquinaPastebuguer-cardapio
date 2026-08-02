@@ -27,14 +27,27 @@ export function buildOrderMessage({
   lines.push("*Novo pedido - Esquina Pasteburguer*");
   lines.push("");
   lines.push("*Itens:*");
+
+  const itemsByCategory = new Map<string, CartItem[]>();
   for (const item of items) {
-    lines.push(
-      `• ${item.quantity}x ${item.name} - ${formatCurrency(
-        item.unitPrice * item.quantity
-      )}`
-    );
-    if (item.notes.trim()) {
-      lines.push(`  obs: ${item.notes.trim()}`);
+    const key = item.categoryName || "Outros";
+    const group = itemsByCategory.get(key) ?? [];
+    group.push(item);
+    itemsByCategory.set(key, group);
+  }
+
+  for (const [categoryName, categoryItems] of itemsByCategory) {
+    lines.push("");
+    lines.push(`*${categoryName}:*`);
+    for (const item of categoryItems) {
+      lines.push(
+        `• ${item.quantity}x ${item.name} - ${formatCurrency(
+          item.unitPrice * item.quantity
+        )}`
+      );
+      if (item.notes.trim()) {
+        lines.push(`  obs: ${item.notes.trim()}`);
+      }
     }
   }
 

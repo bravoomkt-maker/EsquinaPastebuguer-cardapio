@@ -87,6 +87,7 @@ export function SizeHalfModal({
       sizeLabel,
       secondProductId: isHalf ? secondProduct!.id : null,
       minQuantity: product.min_quantity,
+      categoryName: category?.name ?? "",
     });
 
     onClose();

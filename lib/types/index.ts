@@ -23,6 +23,7 @@ export interface CartItem {
   sizeLabel: string | null;
   secondProductId: string | null;
   minQuantity: number;
+  categoryName: string;
 }
 
 export type PaymentMethod = "dinheiro" | "pix" | "cartao";

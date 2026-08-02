@@ -11,6 +11,7 @@ export interface AddCartItemInput {
   sizeLabel?: string | null;
   secondProductId?: string | null;
   minQuantity?: number;
+  categoryName: string;
 }
 
 function buildLineId(input: {
@@ -68,6 +69,7 @@ export const useCartStore = create<CartState>()(
                 sizeLabel: input.sizeLabel ?? null,
                 secondProductId: input.secondProductId ?? null,
                 minQuantity,
+                categoryName: input.categoryName,
               },
             ],
           };
