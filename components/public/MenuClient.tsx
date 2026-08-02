@@ -77,7 +77,7 @@ export function MenuClient({
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-4">
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-4 pb-28">
         <SearchBar value={search} onChange={setSearch} />
         <CategoryNav
           categories={categories}
@@ -92,9 +92,7 @@ export function MenuClient({
         />
       </div>
 
-      <div className="mx-auto w-full max-w-4xl">
-        <CartBar onOpen={() => setCartOpen(true)} />
-      </div>
+      <CartBar onOpen={() => setCartOpen(true)} />
 
       <CartDrawer
         open={cartOpen}
