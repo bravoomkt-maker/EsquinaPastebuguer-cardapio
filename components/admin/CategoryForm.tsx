@@ -21,6 +21,9 @@ export function CategoryForm({
   const [allowHalfHalf, setAllowHalfHalf] = useState(
     category?.allow_half_half ?? false
   );
+  const [minQuantity, setMinQuantity] = useState(
+    String(category?.min_quantity ?? 1)
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,6 +34,7 @@ export function CategoryForm({
 
     const formData = new FormData();
     formData.set("name", name);
+    formData.set("min_quantity", minQuantity);
     if (active) formData.set("active", "on");
     if (allowHalfHalf) formData.set("allow_half_half", "on");
 
@@ -80,6 +84,20 @@ export function CategoryForm({
           />
           Permitir meio a meio (ex: pizzas)
         </label>
+
+        <Input
+          label="Quantidade mínima total do pedido nesta categoria"
+          type="number"
+          step="1"
+          min="1"
+          value={minQuantity}
+          onChange={(event) => setMinQuantity(event.target.value)}
+          required
+        />
+        <p className="-mt-2 text-xs text-ink-soft">
+          Ex: 5 para esfirras — o cliente pode misturar sabores, contanto que
+          a soma chegue a esse total.
+        </p>
 
         {error && (
           <p className="text-sm text-brand" role="alert">

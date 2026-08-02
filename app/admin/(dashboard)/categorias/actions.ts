@@ -18,7 +18,12 @@ export async function createCategory(
 ): Promise<ActionResult> {
   const name = String(formData.get("name") ?? "").trim();
   const allowHalfHalf = formData.get("allow_half_half") === "on";
+  const minQuantityRaw = String(formData.get("min_quantity") ?? "").trim();
+  const minQuantity = minQuantityRaw ? Number(minQuantityRaw) : 1;
   if (!name) return { error: "Nome é obrigatório" };
+  if (!Number.isInteger(minQuantity) || minQuantity < 1) {
+    return { error: "Quantidade mínima deve ser um número inteiro maior ou igual a 1" };
+  }
 
   const supabase = await createClient();
 
@@ -33,6 +38,7 @@ export async function createCategory(
     name,
     position: (last?.position ?? 0) + 1,
     allow_half_half: allowHalfHalf,
+    min_quantity: minQuantity,
   });
 
   if (error) return { error: friendlyError(error) };
@@ -49,12 +55,22 @@ export async function updateCategory(
   const name = String(formData.get("name") ?? "").trim();
   const active = formData.get("active") === "on";
   const allowHalfHalf = formData.get("allow_half_half") === "on";
+  const minQuantityRaw = String(formData.get("min_quantity") ?? "").trim();
+  const minQuantity = minQuantityRaw ? Number(minQuantityRaw) : 1;
   if (!name) return { error: "Nome é obrigatório" };
+  if (!Number.isInteger(minQuantity) || minQuantity < 1) {
+    return { error: "Quantidade mínima deve ser um número inteiro maior ou igual a 1" };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("categories")
-    .update({ name, active, allow_half_half: allowHalfHalf })
+    .update({
+      name,
+      active,
+      allow_half_half: allowHalfHalf,
+      min_quantity: minQuantity,
+    })
     .eq("id", id);
 
   if (error) return { error: friendlyError(error) };

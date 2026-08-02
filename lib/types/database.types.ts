@@ -37,6 +37,7 @@ export interface Database {
           position: number
           active: boolean
           allow_half_half: boolean
+          min_quantity: number
           created_at: string
         }
         Insert: {
@@ -45,6 +46,7 @@ export interface Database {
           position?: number
           active?: boolean
           allow_half_half?: boolean
+          min_quantity?: number
           created_at?: string
         }
         Update: {
@@ -53,6 +55,7 @@ export interface Database {
           position?: number
           active?: boolean
           allow_half_half?: boolean
+          min_quantity?: number
           created_at?: string
         }
         Relationships: []
