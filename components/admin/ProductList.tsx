@@ -10,16 +10,20 @@ import {
   toggleProductField,
 } from "@/app/admin/(dashboard)/produtos/actions";
 import { formatCurrency } from "@/lib/utils/currency";
-import type { Category, Product, ProductSize } from "@/lib/types";
+import type { Category, ModifierGroup, Product, ProductSize } from "@/lib/types";
 
 export function ProductList({
   products,
   categories,
   sizesByProduct,
+  modifierGroups,
+  modifierGroupIdsByProduct,
 }: {
   products: Product[];
   categories: Category[];
   sizesByProduct: Record<string, ProductSize[]>;
+  modifierGroups: ModifierGroup[];
+  modifierGroupIdsByProduct: Record<string, string[]>;
 }) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -122,7 +126,11 @@ export function ProductList({
                     {categoryName(product.category_id)}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                    {(sizesByProduct[product.id]?.length ?? 0) > 0 ? (
+                    {product.pricing_type === "weight" ? (
+                      <span className="text-sm font-bold text-ink">
+                        {formatCurrency(product.price_per_kg ?? 0)}/kg
+                      </span>
+                    ) : (sizesByProduct[product.id]?.length ?? 0) > 0 ? (
                       <span className="text-sm font-bold text-ink">
                         A partir de{" "}
                         {formatCurrency(
@@ -147,10 +155,15 @@ export function ProductList({
                         {formatCurrency(product.price)}
                       </span>
                     )}
+                    {product.pricing_type === "weight" && (
+                      <Badge tone="accent">Por peso</Badge>
+                    )}
                     {product.featured && <Badge tone="accent">Destaque</Badge>}
                     <Badge tone={product.available ? "success" : "muted"}>
                       {product.available ? "Disponível" : "Indisponível"}
                     </Badge>
+                    {!product.visible_menu && <Badge tone="muted">Oculto no cardápio</Badge>}
+                    {!product.visible_pos && <Badge tone="muted">Oculto no PDV</Badge>}
                   </div>
                 </div>
               </div>
@@ -200,6 +213,10 @@ export function ProductList({
         categories={categories}
         product={editingProduct ?? undefined}
         sizes={editingProduct ? sizesByProduct[editingProduct.id] : undefined}
+        modifierGroups={modifierGroups}
+        selectedModifierGroupIds={
+          editingProduct ? (modifierGroupIdsByProduct[editingProduct.id] ?? []) : []
+        }
       />
     </div>
   );

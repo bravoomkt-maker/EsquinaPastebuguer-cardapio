@@ -17,7 +17,11 @@ export default async function PedidosPage() {
 
   const orderIds = orders.map((order) => order.id);
   const neighborhoodIds = [
-    ...new Set(orders.map((order) => order.neighborhood_id)),
+    ...new Set(
+      orders
+        .map((order) => order.neighborhood_id)
+        .filter((id): id is string => id !== null)
+    ),
   ];
 
   const [{ data: items }, { data: neighborhoods }] = await Promise.all([

@@ -46,42 +46,124 @@ interface ProductFields {
   available: boolean;
   featured: boolean;
   min_quantity: number;
+  pricing_type: "unit" | "weight";
+  price_per_kg: number | null;
+  max_weight_grams: number | null;
+  internal_code: string | null;
+  track_stock: boolean;
+  stock_quantity: number;
+  allow_modifiers: boolean;
+  allow_notes: boolean;
+  visible_menu: boolean;
+  visible_pos: boolean;
 }
 
 function parseFields(formData: FormData): ProductFields | { error: string } {
   const name = String(formData.get("name") ?? "").trim();
   const categoryId = String(formData.get("category_id") ?? "");
   const description = String(formData.get("description") ?? "").trim();
-  const price = Number(formData.get("price"));
+  const pricingType = formData.get("pricing_type") === "weight" ? "weight" : "unit";
+  const price = Number(formData.get("price") || 0);
   const promoRaw = String(formData.get("promo_price") ?? "").trim();
   const promoPrice = promoRaw ? Number(promoRaw) : null;
+  const pricePerKgRaw = String(formData.get("price_per_kg") ?? "").trim();
+  const pricePerKg = pricePerKgRaw ? Number(pricePerKgRaw) : null;
+  const maxWeightRaw = String(formData.get("max_weight_grams") ?? "").trim();
+  const maxWeightGrams = maxWeightRaw ? Number(maxWeightRaw) : null;
+  const internalCode = String(formData.get("internal_code") ?? "").trim();
+  const trackStock = formData.get("track_stock") === "on";
+  const stockQuantityRaw = String(formData.get("stock_quantity") ?? "").trim();
+  const stockQuantity = stockQuantityRaw ? Number(stockQuantityRaw) : 0;
   const available = formData.get("available") === "on";
   const featured = formData.get("featured") === "on";
+  const allowModifiers = formData.get("allow_modifiers") === "on";
+  const allowNotes = formData.get("allow_notes") === "on";
+  const visibleMenu = formData.get("visible_menu") === "on";
+  const visiblePos = formData.get("visible_pos") === "on";
   const minQuantityRaw = String(formData.get("min_quantity") ?? "").trim();
   const minQuantity = minQuantityRaw ? Number(minQuantityRaw) : 1;
 
   if (!name) return { error: "Nome é obrigatório" };
   if (!categoryId) return { error: "Selecione uma categoria" };
-  if (!price || Number.isNaN(price) || price <= 0) {
-    return { error: "Informe um preço válido" };
+
+  if (pricingType === "weight") {
+    if (!pricePerKg || Number.isNaN(pricePerKg) || pricePerKg <= 0) {
+      return { error: "Informe um preço por quilo válido" };
+    }
+    if (maxWeightGrams !== null && (Number.isNaN(maxWeightGrams) || maxWeightGrams <= 0)) {
+      return { error: "Informe um peso máximo válido" };
+    }
+  } else {
+    if (!price || Number.isNaN(price) || price <= 0) {
+      return { error: "Informe um preço válido" };
+    }
+    if (promoPrice !== null && (Number.isNaN(promoPrice) || promoPrice >= price)) {
+      return { error: "O preço promocional deve ser menor que o preço normal" };
+    }
   }
-  if (promoPrice !== null && (Number.isNaN(promoPrice) || promoPrice >= price)) {
-    return { error: "O preço promocional deve ser menor que o preço normal" };
-  }
+
   if (!Number.isInteger(minQuantity) || minQuantity < 1) {
     return { error: "Quantidade mínima deve ser um número inteiro maior ou igual a 1" };
+  }
+  if (trackStock && (Number.isNaN(stockQuantity) || stockQuantity < 0)) {
+    return { error: "Informe uma quantidade em estoque válida" };
   }
 
   return {
     name,
     category_id: categoryId,
     description: description || null,
-    price,
-    promo_price: promoPrice,
+    price: pricingType === "weight" ? 0 : price,
+    promo_price: pricingType === "weight" ? null : promoPrice,
     available,
     featured,
     min_quantity: minQuantity,
+    pricing_type: pricingType,
+    price_per_kg: pricingType === "weight" ? pricePerKg : null,
+    max_weight_grams: pricingType === "weight" ? maxWeightGrams : null,
+    internal_code: internalCode || null,
+    track_stock: trackStock,
+    stock_quantity: trackStock ? stockQuantity : 0,
+    allow_modifiers: allowModifiers,
+    allow_notes: allowNotes,
+    visible_menu: visibleMenu,
+    visible_pos: visiblePos,
   };
+}
+
+function parseModifierGroupIds(formData: FormData): string[] {
+  const raw = String(formData.get("modifier_group_ids") ?? "[]");
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((id): id is string => typeof id === "string" && id.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+async function syncProductModifierGroups(
+  supabase: SupabaseClient<Database>,
+  productId: string,
+  modifierGroupIds: string[]
+): Promise<string | null> {
+  const { error: deleteError } = await supabase
+    .from("product_modifier_groups")
+    .delete()
+    .eq("product_id", productId);
+
+  if (deleteError) return deleteError.message;
+  if (modifierGroupIds.length === 0) return null;
+
+  const { error: insertError } = await supabase.from("product_modifier_groups").insert(
+    modifierGroupIds.map((modifierGroupId, index) => ({
+      product_id: productId,
+      modifier_group_id: modifierGroupId,
+      position: index,
+    }))
+  );
+
+  return insertError?.message ?? null;
 }
 
 interface SizeInput {
@@ -169,6 +251,8 @@ export async function createProduct(
   const sizes = parseSizes(formData);
   if ("error" in sizes) return sizes;
 
+  const modifierGroupIds = parseModifierGroupIds(formData);
+
   const supabase = await createClient();
   const imageFile = formData.get("image") as File | null;
 
@@ -204,6 +288,9 @@ export async function createProduct(
   const sizesError = await syncProductSizes(supabase, created.id, sizes);
   if (sizesError) return { error: sizesError };
 
+  const modifierGroupsError = await syncProductModifierGroups(supabase, created.id, modifierGroupIds);
+  if (modifierGroupsError) return { error: modifierGroupsError };
+
   revalidatePath("/admin/produtos");
   revalidatePath("/");
 }
@@ -219,6 +306,8 @@ export async function updateProduct(
 
   const sizes = parseSizes(formData);
   if ("error" in sizes) return sizes;
+
+  const modifierGroupIds = parseModifierGroupIds(formData);
 
   const supabase = await createClient();
   const imageFile = formData.get("image") as File | null;
@@ -242,6 +331,9 @@ export async function updateProduct(
 
   const sizesError = await syncProductSizes(supabase, id, sizes);
   if (sizesError) return { error: sizesError };
+
+  const modifierGroupsError = await syncProductModifierGroups(supabase, id, modifierGroupIds);
+  if (modifierGroupsError) return { error: modifierGroupsError };
 
   revalidatePath("/admin/produtos");
   revalidatePath("/");

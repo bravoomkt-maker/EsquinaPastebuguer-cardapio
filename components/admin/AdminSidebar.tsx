@@ -7,11 +7,18 @@ import { logout } from "@/app/admin/actions";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/pdv", label: "PDV" },
+  { href: "/admin/pedidos", label: "Pedidos" },
+  { href: "/cozinha", label: "Cozinha" },
+  { href: "/caixa", label: "Caixa" },
   { href: "/admin/categorias", label: "Categorias" },
   { href: "/admin/produtos", label: "Produtos" },
+  { href: "/admin/adicionais", label: "Adicionais" },
   { href: "/admin/bairros", label: "Bairros" },
+  { href: "/admin/formas-pagamento", label: "Formas de pagamento" },
+  { href: "/admin/relatorios", label: "Relatórios" },
+  { href: "/admin/usuarios", label: "Usuários" },
   { href: "/admin/configuracoes", label: "Configurações" },
-  { href: "/admin/pedidos", label: "Pedidos" },
 ];
 
 export function AdminSidebar() {

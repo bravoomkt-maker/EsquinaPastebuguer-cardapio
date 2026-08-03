@@ -21,10 +21,16 @@ export async function createNeighborhood(
 ): Promise<ActionResult> {
   const name = String(formData.get("name") ?? "").trim();
   const deliveryFee = Number(formData.get("delivery_fee"));
+  const estimatedTime = String(formData.get("estimated_time") ?? "").trim();
+  const minOrderRaw = String(formData.get("min_order_value") ?? "").trim();
+  const minOrderValue = minOrderRaw ? Number(minOrderRaw) : null;
 
   if (!name) return { error: "Nome é obrigatório" };
   if (Number.isNaN(deliveryFee) || deliveryFee < 0) {
     return { error: "Informe uma taxa de entrega válida" };
+  }
+  if (minOrderValue !== null && (Number.isNaN(minOrderValue) || minOrderValue < 0)) {
+    return { error: "Informe um pedido mínimo válido" };
   }
 
   const supabase = await createClient();
@@ -39,6 +45,8 @@ export async function createNeighborhood(
   const { error } = await supabase.from("neighborhoods").insert({
     name,
     delivery_fee: deliveryFee,
+    estimated_time: estimatedTime || null,
+    min_order_value: minOrderValue,
     position: (last?.position ?? 0) + 1,
   });
 
@@ -56,16 +64,28 @@ export async function updateNeighborhood(
   const name = String(formData.get("name") ?? "").trim();
   const deliveryFee = Number(formData.get("delivery_fee"));
   const active = formData.get("active") === "on";
+  const estimatedTime = String(formData.get("estimated_time") ?? "").trim();
+  const minOrderRaw = String(formData.get("min_order_value") ?? "").trim();
+  const minOrderValue = minOrderRaw ? Number(minOrderRaw) : null;
 
   if (!name) return { error: "Nome é obrigatório" };
   if (Number.isNaN(deliveryFee) || deliveryFee < 0) {
     return { error: "Informe uma taxa de entrega válida" };
   }
+  if (minOrderValue !== null && (Number.isNaN(minOrderValue) || minOrderValue < 0)) {
+    return { error: "Informe um pedido mínimo válido" };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("neighborhoods")
-    .update({ name, delivery_fee: deliveryFee, active })
+    .update({
+      name,
+      delivery_fee: deliveryFee,
+      active,
+      estimated_time: estimatedTime || null,
+      min_order_value: minOrderValue,
+    })
     .eq("id", id);
 
   if (error) return { error: friendlyError(error) };

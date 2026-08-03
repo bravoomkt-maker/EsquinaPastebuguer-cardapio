@@ -23,6 +23,12 @@ export function NeighborhoodForm({
   const [deliveryFee, setDeliveryFee] = useState(
     neighborhood ? String(neighborhood.delivery_fee) : ""
   );
+  const [estimatedTime, setEstimatedTime] = useState(
+    neighborhood?.estimated_time ?? ""
+  );
+  const [minOrderValue, setMinOrderValue] = useState(
+    neighborhood?.min_order_value ? String(neighborhood.min_order_value) : ""
+  );
   const [active, setActive] = useState(neighborhood?.active ?? true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,6 +41,8 @@ export function NeighborhoodForm({
     const formData = new FormData();
     formData.set("name", name);
     formData.set("delivery_fee", deliveryFee);
+    formData.set("estimated_time", estimatedTime);
+    formData.set("min_order_value", minOrderValue);
     if (active) formData.set("active", "on");
 
     const result = neighborhood
@@ -73,6 +81,23 @@ export function NeighborhoodForm({
           value={deliveryFee}
           onChange={(e) => setDeliveryFee(e.target.value)}
           required
+        />
+
+        <Input
+          label="Tempo médio de entrega (opcional)"
+          placeholder="Ex: 40-60 min"
+          value={estimatedTime}
+          onChange={(e) => setEstimatedTime(e.target.value)}
+        />
+
+        <Input
+          label="Pedido mínimo para este bairro (opcional)"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="Deixe em branco para usar o mínimo geral da loja"
+          value={minOrderValue}
+          onChange={(e) => setMinOrderValue(e.target.value)}
         />
 
         {neighborhood && (
