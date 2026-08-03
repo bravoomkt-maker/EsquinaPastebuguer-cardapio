@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import {
   deleteProduct,
   toggleProductField,
@@ -29,9 +30,40 @@ export function ProductList({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const categoryName = (id: string) =>
     categories.find((c) => c.id === id)?.name ?? "Sem categoria";
+
+  const groupedProducts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const filtered = query
+      ? products.filter((p) => p.name.toLowerCase().includes(query))
+      : products;
+
+    const byCategory = new Map<string, Product[]>();
+    for (const product of filtered) {
+      const list = byCategory.get(product.category_id) ?? [];
+      list.push(product);
+      byCategory.set(product.category_id, list);
+    }
+
+    const groups = categories
+      .map((category) => ({ category, products: byCategory.get(category.id) ?? [] }))
+      .filter((group) => group.products.length > 0);
+
+    const orphanProducts = filtered.filter(
+      (p) => !categories.some((c) => c.id === p.category_id)
+    );
+    if (orphanProducts.length > 0) {
+      groups.push({
+        category: { id: "sem-categoria", name: "Sem categoria" } as Category,
+        products: orphanProducts,
+      });
+    }
+
+    return groups;
+  }, [products, categories, search]);
 
   function openCreate() {
     setEditingProduct(null);
@@ -84,19 +116,38 @@ export function ProductList({
         </p>
       )}
 
+      <Input
+        placeholder="Pesquisar produto pelo nome..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
       {error && (
         <p className="text-sm text-brand" role="alert">
           {error}
         </p>
       )}
 
-      <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-ink/10">
-        {products.length === 0 ? (
+      {products.length === 0 ? (
+        <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-ink/10">
           <p className="p-6 text-center text-sm text-ink-soft">
             Nenhum produto cadastrado.
           </p>
-        ) : (
-          products.map((product) => (
+        </div>
+      ) : groupedProducts.length === 0 ? (
+        <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-ink/10">
+          <p className="p-6 text-center text-sm text-ink-soft">
+            Nenhum produto encontrado para &quot;{search}&quot;.
+          </p>
+        </div>
+      ) : (
+        groupedProducts.map((group) => (
+          <div key={group.category.id} className="flex flex-col gap-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+              {group.category.name} · {group.products.length}
+            </h2>
+            <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-ink/10">
+              {group.products.map((product) => (
             <div
               key={product.id}
               className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 p-4 last:border-0"
@@ -202,9 +253,11 @@ export function ProductList({
                 </Button>
               </div>
             </div>
-          ))
-        )}
-      </div>
+              ))}
+            </div>
+          </div>
+        ))
+      )}
 
       <ProductForm
         key={editingProduct?.id ?? "new"}
