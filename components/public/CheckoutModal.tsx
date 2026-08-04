@@ -14,6 +14,7 @@ import { buildOrderMessage, buildWhatsAppUrl } from "@/lib/utils/whatsapp";
 import type { CheckoutFormData, Neighborhood, PaymentMethod } from "@/lib/types";
 
 const EMPTY_FORM: CheckoutFormData = {
+  orderType: "entrega",
   customerName: "",
   customerPhone: "",
   street: "",
@@ -47,13 +48,15 @@ export function CheckoutModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const isPickup = form.orderType === "retirada";
+
   const selectedNeighborhood = useMemo(
     () => neighborhoods.find((n) => n.id === form.neighborhoodId) ?? null,
     [neighborhoods, form.neighborhoodId]
   );
 
   const subtotal = cartSubtotal(items);
-  const deliveryFee = selectedNeighborhood?.delivery_fee ?? 0;
+  const deliveryFee = isPickup ? 0 : (selectedNeighborhood?.delivery_fee ?? 0);
   const total = subtotal + deliveryFee;
 
   function updateField<K extends keyof CheckoutFormData>(
@@ -69,7 +72,10 @@ export function CheckoutModal({
 
     const validationErrors = validateCheckoutForm(form);
     setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0 || !selectedNeighborhood) {
+    if (
+      Object.keys(validationErrors).length > 0 ||
+      (!isPickup && !selectedNeighborhood)
+    ) {
       return;
     }
 
@@ -86,11 +92,11 @@ export function CheckoutModal({
       const { data, error } = await supabase.rpc("create_order", {
         p_customer_name: form.customerName,
         p_customer_phone: form.customerPhone,
-        p_street: form.street,
-        p_number: form.number,
-        p_complement: form.complement || null,
-        p_reference_point: form.referencePoint || null,
-        p_neighborhood_id: form.neighborhoodId,
+        p_street: isPickup ? null : form.street,
+        p_number: isPickup ? null : form.number,
+        p_complement: isPickup ? null : form.complement || null,
+        p_reference_point: isPickup ? null : form.referencePoint || null,
+        p_neighborhood_id: isPickup ? null : form.neighborhoodId,
         p_payment_method: form.paymentMethod,
         p_change_for:
           form.paymentMethod === "dinheiro" && form.changeFor.trim()
@@ -104,6 +110,7 @@ export function CheckoutModal({
           size_label: item.sizeLabel,
           second_product_id: item.secondProductId,
         })),
+        p_order_type: form.orderType,
       });
 
       if (error) {
@@ -114,7 +121,7 @@ export function CheckoutModal({
       const message = buildOrderMessage({
         form,
         items,
-        neighborhood: selectedNeighborhood,
+        neighborhood: isPickup ? null : selectedNeighborhood,
         subtotal: result?.subtotal ?? subtotal,
         deliveryFee: result?.delivery_fee ?? deliveryFee,
         total: result?.total ?? total,
@@ -150,6 +157,31 @@ export function CheckoutModal({
   return (
     <Modal open={open} onClose={onClose} title="Finalizar pedido" className="max-w-xl">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => updateField("orderType", "entrega")}
+            className={`flex-1 rounded-full py-2 text-sm font-semibold transition-colors ${
+              form.orderType === "entrega"
+                ? "bg-brand text-white"
+                : "bg-surface text-ink-soft ring-1 ring-inset ring-ink/10"
+            }`}
+          >
+            Entrega
+          </button>
+          <button
+            type="button"
+            onClick={() => updateField("orderType", "retirada")}
+            className={`flex-1 rounded-full py-2 text-sm font-semibold transition-colors ${
+              form.orderType === "retirada"
+                ? "bg-brand text-white"
+                : "bg-surface text-ink-soft ring-1 ring-inset ring-ink/10"
+            }`}
+          >
+            Retirada no local
+          </button>
+        </div>
+
         <Input
           label="Nome"
           value={form.customerName}
@@ -165,47 +197,51 @@ export function CheckoutModal({
           error={errors.customerPhone}
         />
 
-        <div className="grid grid-cols-3 gap-3">
-          <div className="col-span-2">
+        {!isPickup && (
+          <>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2">
+                <Input
+                  label="Rua"
+                  value={form.street}
+                  onChange={(e) => updateField("street", e.target.value)}
+                  error={errors.street}
+                />
+              </div>
+              <Input
+                label="Número"
+                value={form.number}
+                onChange={(e) => updateField("number", e.target.value)}
+                error={errors.number}
+              />
+            </div>
+
             <Input
-              label="Rua"
-              value={form.street}
-              onChange={(e) => updateField("street", e.target.value)}
-              error={errors.street}
+              label="Complemento"
+              value={form.complement}
+              onChange={(e) => updateField("complement", e.target.value)}
             />
-          </div>
-          <Input
-            label="Número"
-            value={form.number}
-            onChange={(e) => updateField("number", e.target.value)}
-            error={errors.number}
-          />
-        </div>
+            <Input
+              label="Ponto de referência"
+              value={form.referencePoint}
+              onChange={(e) => updateField("referencePoint", e.target.value)}
+            />
 
-        <Input
-          label="Complemento"
-          value={form.complement}
-          onChange={(e) => updateField("complement", e.target.value)}
-        />
-        <Input
-          label="Ponto de referência"
-          value={form.referencePoint}
-          onChange={(e) => updateField("referencePoint", e.target.value)}
-        />
-
-        <Select
-          label="Bairro"
-          value={form.neighborhoodId}
-          onChange={(e) => updateField("neighborhoodId", e.target.value)}
-          error={errors.neighborhoodId}
-        >
-          <option value="">Selecione...</option>
-          {neighborhoods.map((n) => (
-            <option key={n.id} value={n.id}>
-              {n.name} - {formatCurrency(n.delivery_fee)}
-            </option>
-          ))}
-        </Select>
+            <Select
+              label="Bairro"
+              value={form.neighborhoodId}
+              onChange={(e) => updateField("neighborhoodId", e.target.value)}
+              error={errors.neighborhoodId}
+            >
+              <option value="">Selecione...</option>
+              {neighborhoods.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.name} - {formatCurrency(n.delivery_fee)}
+                </option>
+              ))}
+            </Select>
+          </>
+        )}
 
         <Select
           label="Forma de pagamento"
@@ -241,12 +277,14 @@ export function CheckoutModal({
             <span className="text-ink-soft">Subtotal</span>
             <span>{formatCurrency(subtotal)}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-ink-soft">Taxa de entrega</span>
-            <span>
-              {selectedNeighborhood ? formatCurrency(deliveryFee) : "-"}
-            </span>
-          </div>
+          {!isPickup && (
+            <div className="flex justify-between">
+              <span className="text-ink-soft">Taxa de entrega</span>
+              <span>
+                {selectedNeighborhood ? formatCurrency(deliveryFee) : "-"}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between text-base font-bold text-ink">
             <span>Total</span>
             <span>{formatCurrency(total)}</span>

@@ -105,8 +105,10 @@ export interface CartItem {
 }
 
 export type PaymentMethod = "dinheiro" | "pix" | "cartao";
+export type CheckoutOrderType = "entrega" | "retirada";
 
 export interface CheckoutFormData {
+  orderType: CheckoutOrderType;
   customerName: string;
   customerPhone: string;
   street: string;

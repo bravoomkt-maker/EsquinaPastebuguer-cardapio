@@ -754,15 +754,16 @@ export interface Database {
         Args: {
           p_customer_name: string
           p_customer_phone: string
-          p_street: string
-          p_number: string
+          p_street: string | null
+          p_number: string | null
           p_complement: string | null
           p_reference_point: string | null
-          p_neighborhood_id: string
+          p_neighborhood_id: string | null
           p_payment_method: string
           p_change_for: number | null
           p_notes: string | null
           p_items: Json
+          p_order_type?: string
         }
         Returns: {
           order_id: string

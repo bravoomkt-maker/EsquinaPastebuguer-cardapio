@@ -9,9 +9,13 @@ export function validateCheckoutForm(
 
   if (!form.customerName.trim()) errors.customerName = "Informe seu nome";
   if (!form.customerPhone.trim()) errors.customerPhone = "Informe seu telefone";
-  if (!form.street.trim()) errors.street = "Informe a rua";
-  if (!form.number.trim()) errors.number = "Informe o número";
-  if (!form.neighborhoodId) errors.neighborhoodId = "Selecione o bairro";
+
+  if (form.orderType === "entrega") {
+    if (!form.street.trim()) errors.street = "Informe a rua";
+    if (!form.number.trim()) errors.number = "Informe o número";
+    if (!form.neighborhoodId) errors.neighborhoodId = "Selecione o bairro";
+  }
+
   if (!form.paymentMethod) errors.paymentMethod = "Selecione a forma de pagamento";
 
   if (form.paymentMethod === "dinheiro" && form.changeFor.trim()) {

@@ -17,14 +17,17 @@ export function buildOrderMessage({
 }: {
   form: CheckoutFormData;
   items: CartItem[];
-  neighborhood: Neighborhood;
+  neighborhood: Neighborhood | null;
   subtotal: number;
   deliveryFee: number;
   total: number;
 }): string {
   const lines: string[] = [];
+  const isPickup = form.orderType === "retirada";
 
   lines.push("*Novo pedido - Esquina Pasteburguer*");
+  lines.push("");
+  lines.push(`*${isPickup ? "Retirada no local" : "Entrega"}*`);
   lines.push("");
   lines.push("*Itens:*");
 
@@ -53,19 +56,29 @@ export function buildOrderMessage({
 
   lines.push("");
   lines.push(`Subtotal: ${formatCurrency(subtotal)}`);
-  lines.push(`Taxa de entrega (${neighborhood.name}): ${formatCurrency(deliveryFee)}`);
+  if (!isPickup) {
+    lines.push(
+      `Taxa de entrega (${neighborhood?.name ?? ""}): ${formatCurrency(deliveryFee)}`
+    );
+  }
   lines.push(`*Total: ${formatCurrency(total)}*`);
   lines.push("");
-  lines.push("*Dados para entrega:*");
   lines.push(`Nome: ${form.customerName}`);
   lines.push(`Telefone: ${form.customerPhone}`);
 
-  const addressParts = [`${form.street}, ${form.number}`];
-  if (form.complement.trim()) addressParts.push(form.complement.trim());
-  lines.push(`Endereço: ${addressParts.join(" - ")}`);
-  lines.push(`Bairro: ${neighborhood.name}`);
-  if (form.referencePoint.trim()) {
-    lines.push(`Ponto de referência: ${form.referencePoint.trim()}`);
+  if (isPickup) {
+    lines.push("");
+    lines.push("*O cliente vai retirar o pedido no local.*");
+  } else {
+    lines.push("");
+    lines.push("*Dados para entrega:*");
+    const addressParts = [`${form.street}, ${form.number}`];
+    if (form.complement.trim()) addressParts.push(form.complement.trim());
+    lines.push(`Endereço: ${addressParts.join(" - ")}`);
+    lines.push(`Bairro: ${neighborhood?.name ?? ""}`);
+    if (form.referencePoint.trim()) {
+      lines.push(`Ponto de referência: ${form.referencePoint.trim()}`);
+    }
   }
 
   lines.push("");
