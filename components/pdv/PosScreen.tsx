@@ -6,6 +6,7 @@ import { ModifiersModal } from "@/components/pdv/ModifiersModal";
 import { PosCategorySidebar } from "@/components/pdv/PosCategorySidebar";
 import { PosProductCard } from "@/components/pdv/PosProductCard";
 import { PosTopBar } from "@/components/pdv/PosTopBar";
+import { SizeHalfModal } from "@/components/pdv/SizeHalfModal";
 import { TableOrderPanel } from "@/components/pdv/TableOrderPanel";
 import { WeightModal } from "@/components/pdv/WeightModal";
 import { SearchBar } from "@/components/public/SearchBar";
@@ -53,6 +54,7 @@ export function PosScreen({
   const [orderType, setOrderType] = useState<OrderType>("balcao");
   const [weightProduct, setWeightProduct] = useState<Product | null>(null);
   const [modifiersProduct, setModifiersProduct] = useState<Product | null>(null);
+  const [sizeModalProduct, setSizeModalProduct] = useState<Product | null>(null);
   const addItem = usePosCartStore((s) => s.addItem);
 
   const posProducts = useMemo(
@@ -75,6 +77,13 @@ export function PosScreen({
 
   const categoryName = (id: string) => categories.find((c) => c.id === id)?.name ?? "";
 
+  const sizeModalCategory = sizeModalProduct
+    ? categories.find((c) => c.id === sizeModalProduct.category_id)
+    : undefined;
+  const sizeModalSiblings = sizeModalProduct
+    ? posProducts.filter((p) => p.category_id === sizeModalProduct.category_id)
+    : [];
+
   function handleSelectProduct(product: Product) {
     if (!product.available) return;
 
@@ -83,36 +92,17 @@ export function PosScreen({
       return;
     }
 
+    const sizes = sizesByProduct[product.id] ?? [];
+    if (sizes.length > 0) {
+      setSizeModalProduct(product);
+      return;
+    }
+
     const groupIds = modifierGroupIdsByProduct[product.id] ?? [];
     const groups = modifierGroups.filter((g) => groupIds.includes(g.id));
 
     if (product.allow_modifiers && groups.length > 0) {
       setModifiersProduct(product);
-      return;
-    }
-
-    const sizes = sizesByProduct[product.id] ?? [];
-    if (sizes.length > 0) {
-      // PDV usa o menor tamanho como atalho rápido; tamanhos específicos
-      // podem ser ajustados adicionando o item e editando pelo cardápio
-      // completo em uma futura iteração.
-      const cheapest = sizes.reduce((a, b) =>
-        (a.promo_price ?? a.price) <= (b.promo_price ?? b.price) ? a : b
-      );
-      addItem({
-        productId: product.id,
-        name: product.name,
-        saleType: "unit",
-        weightGrams: null,
-        pricePerKg: null,
-        unitPrice: cheapest.promo_price ?? cheapest.price,
-        sizeLabel: cheapest.label,
-        secondProductId: null,
-        notes: "",
-        modifiers: [],
-        imageUrl: product.image_url,
-        categoryName: categoryName(product.category_id),
-      });
       return;
     }
 
@@ -200,6 +190,19 @@ export function PosScreen({
             });
             setWeightProduct(null);
           }}
+        />
+      )}
+
+      {sizeModalProduct && (
+        <SizeHalfModal
+          key={sizeModalProduct.id}
+          open
+          onClose={() => setSizeModalProduct(null)}
+          product={sizeModalProduct}
+          category={sizeModalCategory}
+          sizes={sizesByProduct[sizeModalProduct.id] ?? []}
+          siblingProducts={sizeModalSiblings}
+          sizesByProduct={sizesByProduct}
         />
       )}
 
